@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xxl.job.admin.dao.ZycJobRunningDao">
+
+	<resultMap id="ZycJobRunning" type="com.xxl.job.admin.core.model.ZycJobRunning" >
+		<result column="id" property="id" />
+		<result column="job_excute_id" property="job_excute_id" />
+	    <result column="job_id" property="job_id" />
+	    <result column="job_child_id" property="job_child_id" />
+	    <result column="excute_result_state" property="excute_result_state" />
+	    <result column="error_msg" property="error_msg" />
+	    <result column="create_date" property="create_date" />
+	    <result column="finish_date" property="finish_date" />
+	</resultMap>
+
+	<sql id="Base_Column_List">
+		t.id,
+		t.job_excute_id,
+		t.job_id,
+		t.job_child_id,
+		t.excute_result_state,
+		t.error_msg,
+		t.create_date,
+		t.finish_date
+	</sql>
+
+	<insert id="save" parameterType="com.xxl.job.admin.core.model.ZycJobRunning" useGeneratedKeys="true" keyProperty="id" >
+		INSERT INTO zyc_job_running (
+			id,
+			job_excute_id,
+			job_id,
+			job_child_id,
+			excute_result_state,
+			error_msg,
+			create_date,
+			finish_date
+		) VALUES (
+			#{id},
+			#{job_excute_id},
+			#{job_id},
+			#{job_child_id},
+			#{excute_result_state},
+			#{error_msg},
+			NOW(),
+			#{finish_date}
+		);
+
+	</insert>
+
+	<select id="loadById" parameterType="java.util.HashMap" resultMap="ZycJobRunning">
+		SELECT <include refid="Base_Column_List" />
+		FROM zyc_job_running AS t
+		WHERE t.id = #{id}
+	</select>
+
+	<update id="update" parameterType="com.xxl.job.admin.core.model.ZycJobRunning" >
+		UPDATE zyc_job_running
+		SET
+			excute_result_state = #{excute_result_state},
+			error_msg = #{error_msg},
+			finish_date = #{finish_date}
+		WHERE id = #{id}
+	</update>
+
+	<delete id="delete" parameterType="java.util.HashMap">
+		DELETE
+		FROM zyc_job_running
+		WHERE id = #{id}
+	</delete>
+	<!-- 存在正在执行或者执行失败的父任务，则子任务不再继续执行。2：正在执行，1：执行失败-->
+	<select id="findAllCount" resultType="int">
+		SELECT count(1)
+		FROM zyc_job_running where job_excute_id = #{job_excute_id}
+		 and job_child_id like %${job_id}%
+		 and (excute_result_state =3 or excute_result_state=1)
+	</select>
+</mapper>
