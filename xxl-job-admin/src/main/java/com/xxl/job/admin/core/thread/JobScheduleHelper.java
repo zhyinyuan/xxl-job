@@ -18,6 +18,8 @@ import java.util.concurrent.TimeUnit;
  * @author xuxueli 2019-05-21
  * 任务启动扫描工具类
  * scheduleThread 用于查询数据库中待执行的任务，根据执行时间策略来判定下次执行时间
+ *
+ * ceshi
  */
 public class JobScheduleHelper {
     private static Logger logger = LoggerFactory.getLogger(JobScheduleHelper.class);
