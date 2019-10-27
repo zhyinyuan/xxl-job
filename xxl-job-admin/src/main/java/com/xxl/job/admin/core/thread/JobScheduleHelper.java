@@ -16,6 +16,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @author xuxueli 2019-05-21
+ * 任务启动扫描工具类
+ * scheduleThread 用于查询数据库中待执行的任务，根据执行时间策略来判定下次执行时间
  */
 public class JobScheduleHelper {
     private static Logger logger = LoggerFactory.getLogger(JobScheduleHelper.class);
@@ -72,16 +74,23 @@ public class JobScheduleHelper {
 
                         // 1、pre read
                         long nowTime = System.currentTimeMillis();
+                        /**
+                         * 预先获取任务的下次执行时间小于当前执行时间后5S状态为启动的任务，即trigger_next_time<nowTime+5000
+                         * trigger_status = 1 启动状态
+                         */
                         List<XxlJobInfo> scheduleList = XxlJobAdminConfig.getAdminConfig().getXxlJobInfoDao().scheduleJobQuery(nowTime + PRE_READ_MS);
                         if (scheduleList!=null && scheduleList.size()>0) {
                             // 2、push time-ring
                             for (XxlJobInfo jobInfo: scheduleList) {
-
-                                // time-ring jump
+                                /**
+                                 * 1、当前时间大于任务触发时间后5s，即，过期任务。
+                                 * 该情况任务已执行，根据执行时间策略计算下次执行时间，并更新任务，
+                                 * 若没有获取到下次任务执行时间，则停止该任务。
+                                 *
+                                 * 2、当前时间大于任务触发时间，小于任务触发时间后5s，即，有效任务。
+                                 * 该情况
+                                 */
                                 if (nowTime > jobInfo.getTriggerNextTime() + PRE_READ_MS) {
-                                    // 2.1、trigger-expire > 5s：pass && make next-trigger-time
-
-                                    // fresh next
                                     Date nextValidTime = new CronExpression(jobInfo.getJobCron()).getNextValidTimeAfter(new Date());
                                     if (nextValidTime != null) {
                                         jobInfo.setTriggerLastTime(jobInfo.getTriggerNextTime());
@@ -91,7 +100,6 @@ public class JobScheduleHelper {
                                         jobInfo.setTriggerLastTime(0);
                                         jobInfo.setTriggerNextTime(0);
                                     }
-
                                 } else if (nowTime > jobInfo.getTriggerNextTime()) {
                                     // 2.2、trigger-expire < 5s：direct-trigger && make next-trigger-time
 
